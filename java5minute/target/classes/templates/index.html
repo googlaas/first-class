@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="/jquery-3.3.1.min.js"></script>
+</head>
+<body>
+
+<img class="song-albumImg" th:src="${song.albumImg}" />
+
+<h1 class="song-name" th:text="${song.name}"></h1>
+
+<a href="#" th:data-id="${song.id}" class="player-btn">播放</a>
+<audio id="player" style="display: none;" src="" controls="controls"></audio>
+
+<h3>
+    <label>歌手: </label><span class="song-singer" th:text="${song.singer}"></span>
+</h3>
+
+<h3>
+    <label>所属专辑:</label><span class="song-albumName" th:text="${song.albumName}"></span>
+</h3>
+
+<h3>
+    <label>评论数:</label><span class="song-commentCount" th:text="${song.commentCount}"></span>
+</h3>
+
+<div class="song-lvrics" th:utext="${song.lvrics}"></div>
+
+
+<h1>评论</h1>
+<form action="/comment/post" method="post">
+    <input type="hidden" name="nickName" value="bmatch"/>
+    <input type="hidden" name="songId" value="35"/>
+    <input name="content" type="text" style="width: 80%;height:100px;" placeholder="填写你的评论"/>
+    <br/>
+    <input type="submit" value="评论"/>
+
+</form>
+
+<ul th:each="comment:${comments}">
+    <h3>精彩评论</h3>
+    <li>
+        <img th:src="${comment.icon}">
+        <span th:text="${comment.nickName}"></span>
+        :
+        <span th:text="${comment.content}"></span>
+    </li>
+    <li>
+        <label>评论时间:</label>
+        <span th:text="${#dates.format(comment.commentTime,'yyyy-MM-dd HH:mm:ss')}"></span>
+        <label>点赞数:</label>
+        <a href="#" th:data-id="${comment.id}" class="like-btn">
+            <span th:text="${comment.likeNum}"></span></a>
+    </li>
+</ul>
+
+
+<h3>相似歌曲</h3>
+<ul>
+    <li>
+        <a href="#" class="chang-song" data-id="16">Someone Like You</a>
+        <a href="#" class="player-btn" data-id="16">播放</a>
+    </li>
+</ul>
+
+<!--无论放在哪都是最后运行-->
+<script>
+
+    $(function (){
+        $(".player-btn").on('click',function (e) {
+           e.preventDefault();<!--阻挡其默认行为-->
+
+            var songId=$(this).data("id");
+
+           $.ajax({
+               url:"/song/music",
+               method:"get",
+               data:{
+                   songId:songId
+               },
+               cache:false
+           })
+               .done(function (data) {
+                   $("#player").show();//在id查找player  .player-btn表示在class查找player
+                   $("#player").attr("src",data);
+                   document.getElementById("player").play();
+               });
+        });
+
+        $(".chang-song").on('click',function (e) {
+            e.preventDefault();
+
+            var songId=$(this).data("id");
+            $.ajax({
+                url:"/songinfo/get",
+                method:"get",
+                data:{
+                    songId:songId
+                },
+                catch:false
+            }).done(function (data) {
+                $(".song-albumImg").attr("src",data.albumImg);
+                $(".song-albumName").html(data.albumName);
+                $(".song-singer").html(data.singer);
+                $(".song-name").html(data.name);
+                $(".song-lvrics").html(data.lvrics);
+                $(".song-commentCount").html(data.commentCount);
+
+            });
+        });
+
+        $(".like-btn").on('click',function (e) {
+            e.preventDefault();
+            var self=$(this);
+            var commentId=self.data('id');
+            $.ajax({
+                url:"/comment/like",
+                method:"POST",
+                data:{
+                    songId:"35",
+                    commentId:commentId
+                },
+                cache:false
+            })
+                .done(function (data) {
+                    self.html(data.likeNum);
+                });
+        });
+    });
+
+
+
+</script>
+
+</body>
+</html>
